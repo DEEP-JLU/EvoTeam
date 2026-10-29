@@ -58,7 +58,9 @@ When you have finished recording observations for all the partners **you** need 
 
 **After calling `skip_l2_reflection`**, you will enter idle. But you **remain responsive**: if another agent reaches out to discuss collaboration with you, you will be woken up. **You MUST reply using `send_message`**, then use `update_teammate_profile` to record useful observations.
 
-The reflection session ends when ALL agents have called `skip_l2_reflection`.
+The reflection stage ends when all agents enabled for profile reflection have
+called `skip_l2_reflection`. With the default Chairman-only profile setting,
+only the Chairman participates and its completion ends this stage.
 
 ### Rules
 - **Skip by default** — Discuss only if there was a real problem.

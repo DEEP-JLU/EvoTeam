@@ -76,14 +76,17 @@ class LLMScopeAwareTeamTemplateEvolutionReflector:
             {
                 "role": "system",
                 "content": (
-                    "You are a team-reflection assistant. Given task execution evidence, "
-                    "determine whether to create a reusable agent team or revise its "
+                    "You perform an independent post-task team reflection using the "
+                    "available task execution evidence. Determine whether to create "
+                    "a reusable agent team or revise its "
                     "candidate membership, with a corresponding update to its description. "
                     "Call record_team_template_decision exactly once. Evaluate "
                     "reusable team membership and the collaboration pattern it supports. "
                     "Leave agent behavior and handoff contracts to their respective "
                     "reflection modules; never emit assignments, workflows, subtasks, "
-                    "skills, or handoff rules. Preserve the supplied family_id. "
+                    "skills, capabilities, slots, or handoff rules. The reflector is "
+                    "authoritative for the supplied family_id and family description. "
+                    "Preserve the supplied family_id. "
                     "Team-template names and descriptions must be reusable collaboration "
                     "patterns, not labels for this individual task. Never base them "
                     "on benchmark names, repository names, domains, business topics, "
@@ -98,12 +101,14 @@ class LLMScopeAwareTeamTemplateEvolutionReflector:
                     "repositories, benchmarks, domains, entities, or one-off task topics. "
                     "When the evaluation failed, you MUST explicitly diagnose "
                     "whether the failure is a team-structure failure.\n\n"
-                    "Remove a historically useful member only when evidence supports "
-                    "persistent mismatch, redundancy, harmful contribution, or a more "
-                    "reliable replacement. One failure alone is insufficient. Do not "
-                    "revise the team merely because a task failed. Treat description "
-                    "changes as accompanying membership updates, not as an independent "
-                    "reason to refine a team."
+                    "A single failed task is not sufficient evidence to remove a member "
+                    "that has successful historical support. Remove an existing member "
+                    "only when historical evidence or the current trace clearly shows "
+                    "that it is: (1) persistently mismatched with the family collaboration "
+                    "pattern; (2) redundant with another member; (3) misleading or harmful "
+                    "in execution; (4) repeatedly misrecruited or causing ineffective work; "
+                    "or (5) replaced by a more stable and accurate member. Otherwise preserve "
+                    "it and add the missing capability when justified."
                 ),
             },
             {
@@ -160,9 +165,8 @@ class LLMScopeAwareTeamTemplateEvolutionReflector:
                             "roles, evidence/verification principles, and a short abstract "
                             "applicability boundary, without becoming a workflow or tool "
                             "catalog. Do not encode the current task's topic or "
-                            "title in family_id or family_description. On refine, revise "
-                            "the candidate roster first, then update the description to "
-                            "match the resulting roles and collaboration requirements. "
+                            "title in family_id or family_description. On refine, update the "
+                            "description only when the reusable collaboration pattern changes. "
                             "Retain/no_update must omit both agent_ids "
                             "and family_description so the stored description stays unchanged. "
                             "For a failed evaluation, structural_diagnosis is required "
@@ -381,12 +385,4 @@ def validate_scope_aware_team_template_evolution(
             raise ValueError(
                 f"{decision.action} must target the selected current template"
             )
-        if decision.action == "refine":
-            current_member_ids = {member.agent_id for member in current.members}
-            proposed_member_ids = {member.agent_id for member in decision.members}
-            if proposed_member_ids == current_member_ids:
-                raise ValueError(
-                    "team template refine must change membership; "
-                    "use retain or no_update when only the family description changes"
-                )
     return decision

@@ -45,35 +45,51 @@ class LLMScopeAwareTeamRuleEvolutionReflector:
             {
                 "role": "system",
                 "content": (
-                    "You are an interaction-rule reflection assistant. Given handoff "
-                    "evidence, assess and update reusable information contracts within "
-                    "the current team. Call record_handoff_decision exactly once.\n\n"
+                    "You are the post-task reflector for reusable information handoffs "
+                    "between agents. Call record_handoff_decision exactly once. Do not "
+                    "create a workflow, DAG, task assignment, agent skill, capability "
+                    "list, or team template. A handoff rule is a directed information "
+                    "contract for one sender and one receiver within a handoff family.\n\n"
                     "Scope each rule to a directed sender-recipient pair within the "
                     "current team. Preserve distinct rule_id values when the same pair "
                     "requires different contracts under different triggers; do not "
                     "overwrite a different rule merely because its endpoints match.\n\n"
-                    "Ground each decision in observed handoffs and outcomes, using "
-                    "evaluation feedback and relevant history. Distinguish information-transfer "
-                    "problems from tool or API failures, missing capabilities, and "
-                    "incorrect task assignments.\n\n"
-                    "Convert task-specific details into reusable requirements for "
-                    "information, evidence, provenance, uncertainty, verification, and "
-                    "fallback. Express each improvement as actionable handoff guidance, "
-                    "without embedding one-task filenames, identifiers, or answers in "
-                    "the reusable contract.\n\n"
-                    "Choose create for a useful new contract, refine for a needed "
-                    "revision, or retain when an existing rule remains supported. "
-                    "Choose retire only when historical evidence supports persistent "
-                    "mismatch, redundancy, harm, ineffective handoffs, or replacement by "
-                    "a more reliable rule. The current trace or an isolated failure alone "
-                    "does not meet this historical evidence requirement. Choose no_update "
-                    "when evidence is insufficient. Do not turn an isolated failure into "
-                    "an unconditional prohibition.\n\n"
-                    "Update information contracts only. Leave team membership and agent "
-                    "behavior or skills to their respective reflection modules. Do not "
-                    "replace those updates with interaction rules or turn a handoff "
-                    "contract into a fixed task workflow. Preserve valid prior guidance "
-                    "when refining a rule."
+                    "Ground every claim in the actual handoff trace, execution outcome, "
+                    "evaluation, failures, or existing rule history. Distinguish a bad "
+                    "handoff from an API/provider failure, missing capability, or task "
+                    "assignment error; do not encode those unrelated failures as protocol "
+                    "guidance. Do not infer a stable preference from a single unsupported "
+                    "observation.\n\n"
+                    "Record generalizable collaboration patterns, not one-task details. "
+                    "Do not mention concrete filenames, class names, module names, PR names, "
+                    "repository names, benchmark names, issue numbers, or other "
+                    "benchmark-specific objects. Prefer reusable guidance about what the "
+                    "receiver needs, evidence/provenance and uncertainty, acceptance or "
+                    "verification information, communication style, agreed conventions, "
+                    "and a sensible fallback when information is incomplete.\n\n"
+                    "Treat the current rule as a living record: preserve guidance that is "
+                    "still supported, remove or correct claims contradicted by newer "
+                    "evidence, and add only information that improves future handoffs. "
+                    "The named fields are a stable minimum schema, not a fixed prose "
+                    "template. Use context_notes for important nuances that do not fit "
+                    "the other fields; do not force information into a field or discard it "
+                    "just because it is unusual.\n\n"
+                    "A single failed task is not sufficient evidence to remove a member or "
+                    "retire a rule that has successful historical support. Removal/retirement "
+                    "is justified only when historical evidence or the current trace clearly "
+                    "shows that the member or rule is: (1) persistently mismatched with the "
+                    "family collaboration pattern; (2) redundant with another member or rule; "
+                    "(3) misleading or harmful in execution; (4) repeatedly misrecruited or "
+                    "causing ineffective handoffs; or (5) replaced by a more stable and accurate "
+                    "rule. Otherwise preserve it or add a separate rule.\n\n"
+                    "A normal task or evaluation failure is valid handoff evidence. When the "
+                    "failure is grounded in this interaction, you may create a missing reusable "
+                    "positive contract, refine an existing contract, retain a contract while "
+                    "recording the evidence, retire only under the historical standard above, "
+                    "or choose no_update. Do not create a separate negative-rule type and do not "
+                    "turn a one-off failure into a blanket prohibition. Express any improvement "
+                    "as positive, actionable guidance about the information, evidence, "
+                    "verification, or fallback the receiver needs."
                 ),
             },
             {
@@ -92,24 +108,21 @@ class LLMScopeAwareTeamRuleEvolutionReflector:
                     "handoff_rule_usage": context.handoff_rule_usage,
                     "historical_rule_summaries": context.historical_rule_summaries,
                     "instruction": (
-                        "Return one action and its supporting handoff and outcome "
-                        "evidence in reason. For every rule-specific decision (create, "
-                        "refine, retain, or retire), provide rule_id, from_agent, "
-                        "to_agent, trigger_description, instruction, payload_schema "
-                        "for required information, required_evidence, verification, "
-                        "and fallback. The contract must preserve provenance and "
-                        "uncertainty requirements; context_notes may carry additional "
-                        "nuances. Use the existing rule_id for refine/retain/retire; "
-                        "for create, use a concise semantic ID with lowercase words "
-                        "separated by '_' or '-'. For retain/retire, reproduce the "
-                        "identified current contract rather than inventing replacement "
-                        "content. For refine, return a complete revised rule and "
-                        "explain the evidence for the revision. trigger_description "
-                        "must state a reusable applicability condition, not task-specific "
-                        "routing. For no_update, leave rule_id, from_agent, and to_agent "
-                        "empty. A failed evaluation may support create/refine/retain "
-                        "when grounded in the observed handoff, but retire still "
-                        "requires the historical evidence standard."
+                        "Use create when this task provides a useful new handoff contract, "
+                        "refine when one identified existing contract needs correction, retain when it "
+                        "remains useful, retire only with the explicit historical evidence standard "
+                        "above, and no_update when evidence is insufficient. For create/refine "
+                        "provide a concise semantic handoff_rule_id (lowercase words separated by '_' or '-'; it may include a broad domain such as history or finance), trigger_description, instruction, payload_schema, required_evidence, "
+                        "verification, fallback, and optional context_notes. These fields may "
+                        "be concise and need not all be populated when not applicable. The "
+                        "trigger_description must state the reusable semantic condition for selecting "
+                        "this rule; do not encode task-specific routing rules. For refine, "
+                        "return a complete merged replacement, keep valid prior guidance, "
+                        "remove obsolete one-off observations, and explain what was retained, "
+                        "removed, and added in reason. For no_update, use empty from_agent and "
+                        "to_agent rather than inventing a pair. A failed evaluation is eligible "
+                        "for every action in the action schema when the evidence is tied to this "
+                        "handoff; do not invent a negative-rule type."
                     ),
                 }, ensure_ascii=False),
             },
@@ -234,8 +247,8 @@ class LLMScopeAwareTeamRuleEvolutionReflector:
             model=self.model,
             messages=messages,
             tools=[self._tool_schema()],
-            temperature=0.2,
-            max_tokens=32768,
+            temperature=0.1,
+            max_tokens=1800,
             api_tracker=self._api_tracker,
         )
 

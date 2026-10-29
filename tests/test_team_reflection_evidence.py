@@ -9,9 +9,17 @@ from litellm import ModelResponse
 from benchmarks.adapter import EvalResult, _evolve_team_template
 from core import llm
 from core.agent import Agent
-from core.evolution_models import ScopeAwareTeamTemplateEvolutionDecision, TemplateMember
+from core.evolution_models import (
+    ScopeAwareTeamTemplateEvolutionDecision,
+    TeamTemplate,
+    TemplateMember,
+)
 from core.output_contract import OutputContract
 from core.runner import Runner, RunnerResult
+from core.scope_aware_team_template_evolution import (
+    ScopeAwareTeamTemplateEvolutionContext,
+    validate_scope_aware_team_template_evolution,
+)
 from core.team_template_registry import TeamTemplateRegistry
 from core.tool_registry import ToolRegistry
 
@@ -39,6 +47,42 @@ def _response(content, tool=None, arguments=None, call_id="call_1", reasoning=No
             },
         }]
     return ModelResponse(choices=[{"message": message}])
+
+
+def test_team_template_refine_allows_description_update_without_roster_change():
+    family_id = "evidence_verification"
+    current = TeamTemplate(
+        template_id="tpl_evidence_verification_01",
+        family_id=family_id,
+        version=1,
+        members=[TemplateMember("worker", "worker")],
+    )
+    context = ScopeAwareTeamTemplateEvolutionContext(
+        task_id="task_2",
+        raw_task="A task with a changed reusable collaboration pattern",
+        chairman_id="chairman",
+        family_id=family_id,
+        current_template=current,
+        allowed_agent_ids=["worker"],
+        actual_agent_ids=["worker"],
+        execution_summary={},
+        evaluation={"success": True},
+        failures=[],
+    )
+    decision = ScopeAwareTeamTemplateEvolutionDecision(
+        action="refine",
+        family_id=family_id,
+        reason="The reusable collaboration pattern changed while the roster remains suitable.",
+        members=[TemplateMember("worker", "worker")],
+        family_description="Evidence-led work with independent validation and explicit uncertainty.",
+        target_template_id=current.template_id,
+    )
+
+    validate_scope_aware_team_template_evolution(
+        decision,
+        context=context,
+        known_agent_ids={"chairman", "worker"},
+    )
 
 
 @pytest.mark.parametrize("existing_template", [False, True])

@@ -1,11 +1,11 @@
 ## Reflection Phase — Overview
 
-The task execution is complete. You and your team will now complete the reflection stages to improve for future tasks. Your improvements (patches, skills, profiles, team structure) will persist and be used in all subsequent tasks.
+Task execution is complete. Reflection work records evidence-based improvements for future tasks. Agent patches, skills, teammate profiles, team templates, and team-scoped interaction rules are persisted in their respective memory stores.
 
-**Agent Self-Reflection**: Each agent reflects on their own performance and records improvements (behavioral patches, skills).
+**Agent Self-Reflection**: Each agent reflects on its own performance and records reusable improvements to its behavioral patches or skills.
 
-**Teammate Profile Reflection**: With the default Chairman-only profile setting, the Chairman records stable capability observations about recruited teammates for future recruitment. Only agents enabled by the profile settings participate in this stage. Reusable directed handoff contracts are reflected separately from the observed execution trace and persisted by the team-level handoff reflector.
+**Teammate Profile Reflection**: Only agents enabled by the profile settings participate. With the default Chairman-only setting, the Chairman records stable, task-relevant capability observations about recruited teammates. Teammate profiles contain general capability observations; directed handoff contracts are handled separately by the team-scoped handoff reflector.
 
-**Scope-Aware Experience Evolution** is handled after evaluation: team templates and team-scoped interaction rules are refined from execution traces, outcomes, and historical evidence.
+After evaluation, adapter-level reflectors use the execution trace, outcomes, and relevant history to assess reusable team-template membership and team-scoped interaction rules. These decisions are separate from individual agent behavior and teammate profiles.
 
-The system manages phase transitions automatically. Complete each phase using the provided tools, then wait for the next phase.
+The system manages the agent-facing reflection transitions automatically. Complete the current stage using its provided tools and wait for the next stage. Adapter-level evolution runs separately after evaluation.

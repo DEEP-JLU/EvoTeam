@@ -418,16 +418,16 @@ class ScopeAwareExperienceEvolutionMixin:
 
         parts.append(
             "## Reflection Focus\n"
-            "Ground reflection in **your own observed execution behavior**:\n"
-            "1. Identify repeatable behavioral errors or successful behavior supported by the available trace and feedback.\n"
-            "2. Propose efficiency improvements only when the trace supports a causal link between your repeatable behavior and wasted resources.\n"
-            "3. Leave recruitment, task assignments, team membership, and handoff contracts to team and rule reflection.\n"
-            "4. Do not turn model, API, network, tool, Docker, or MCP failures into agent updates.\n"
-            "5. Do not weaken correctness or verification, or impose arbitrary universal quotas because resources were exhausted.\n\n"
-            "Choose one action and return one structured decision under the agent self-reflection instructions. "
-            "Choose no_update when evidence is insufficient. "
-            "Do not continue debugging or writing code. Use at most 1-2 read-only "
-            "commands if needed to check evidence, then complete self-reflection using the provided tools."
+            "This forced reflection should focus on **resource efficiency**:\n"
+            "1. **Why was the budget/time exhausted?** — Was the planner doing too much analysis before dispatching? Was communication excessive?\n"
+            "2. **What could be done differently?** — Earlier delegation, fewer exploration steps, more concise messages?\n"
+            "3. **Were the right agents recruited?** — Could a reviewer have caught issues earlier?\n"
+            "4. **Communication overhead** — How many messages were exchanged? Were they necessary?\n\n"
+            "**IMPORTANT**: You still have access to the execution environment, "
+            "but this is reflection time — do NOT continue debugging or writing code. "
+            "Focus on process and communication improvements. Use at most 1-2 "
+            "read-only commands for brief diagnosis, then record your improvements "
+            "via update_prompt_patch / update_skill."
         )
 
         if self._task_validation is not None:
@@ -454,10 +454,11 @@ class ScopeAwareExperienceEvolutionMixin:
             if name == self.chairman_name:
                 parts.append(
                     "### Chairman-Specific Reflection\n"
-                    "Apply the same Agent Reflection standard to your own observed execution behavior.\n"
-                    "Do not encode team membership, task assignments, or handoff contracts "
-                    "in your prompt patches or skills; team and rule reflection own those decisions.\n"
-                    "Choose no_update if the available evidence does not support a reusable agent-level improvement."
+                    "As the coordinator, reflect especially on:\n"
+                    "- How long did you spend analyzing before dispatching to team members?\n"
+                    "- Could you have delegated earlier with less analysis?\n"
+                    "- Did you recruit the right team members?\n"
+                    "- Were your dispatch messages efficient and complete?"
                 )
             self.message_store.send(
                 sender="[SYSTEM]",
