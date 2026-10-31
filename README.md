@@ -5,8 +5,7 @@ multi-agent collaboration through evolving teams.
 
 EvoTeam maintains a reusable agent pool, selects or composes a task-specific
 team, and uses execution evidence to evolve team organization, handoff rules,
-and reusable agent experience. The Chairman coordinates each task while the
-benchmark adapter supplies the task environment and native evaluator.
+and reusable agent experience. 
 
 ## Overview
 
