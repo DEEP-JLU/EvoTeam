@@ -1,0 +1,12 @@
+chairman: planner
+settings:
+  max_seconds: 7200
+  max_messages: 500
+  reflection_phase_timeout: 900
+  team_selection_enabled: true
+  answer_agent: answer_agent
+  answer_agent_required: true
+  answer_protocol: locabench_completion_summary
+name: LOCA-bench capability pool
+description: "Capability-oriented pool for LOCA-bench; family selection is based on the actual collaboration pattern required by the complete task."
+api_recovery_budget: 600.0

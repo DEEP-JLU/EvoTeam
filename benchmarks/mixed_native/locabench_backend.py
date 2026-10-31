@@ -747,7 +747,7 @@ atexit.register(_cleanup_mcp_tools)
 
 class LOCABenchAdapter(BenchmarkAdapter):
     benchmark_name = "locabench"
-    default_team = "pool_EvoTeam"
+    default_team = "pool_LOCAbench"
     preserve_timeout_handoff_trace = False
     aggregate_handoff_reflection_by_pair = False
     default_timeout = 3200.0

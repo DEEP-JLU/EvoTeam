@@ -1,0 +1,9 @@
+name: integration_verifier
+description: "Integration verification specialist — checks cross-module side effects, patch completeness, and final evidence before submission."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 60
+tools:
+  - docker_bash
+  - read_file

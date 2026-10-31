@@ -1,0 +1,16 @@
+chairman: plan_agent
+settings:
+  max_seconds: 600
+  effective_task_seconds: 900
+  wall_clock_seconds: 3000
+  max_messages: 300
+  team_selection_enabled: true
+  # Chairman retains recruitment profiles; execution members coordinate only
+  # through their own outgoing handoff rules and never read/write profiles.
+  chairman_teammate_profiles_enabled: true
+  member_teammate_profiles_enabled: false
+  output_contract: gaia
+  answer_agent: answer_agent
+  answer_agent_required: true
+  answer_protocol: gaia_short_answer
+api_recovery_budget: 600.0

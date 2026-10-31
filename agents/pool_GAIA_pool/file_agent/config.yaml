@@ -1,0 +1,10 @@
+name: file_agent
+description: "Analyse the input file to extract useful information."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 25
+tools:
+  - bash
+  - read_file
+  - write_file

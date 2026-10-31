@@ -16,7 +16,13 @@ from task_wrapper import MixedTaskWrapper
 
 
 def test_source_package_boundary():
-    assert {path.name for path in (ROOT / "agents").iterdir()} == {"pool_EvoTeam"}
+    assert {path.name for path in (ROOT / "agents").iterdir()} == {
+        "pool_EvoTeam",
+        "pool_GAIA_pool",
+        "pool_LoCoBench",
+        "pool_LOCAbench",
+        "pool_BeyondSWE",
+    }
     for excluded in ("tools", "data", "runs", "logs", "results", "sessions", "apiconfig"):
         assert not (ROOT / excluded).exists()
     assert {path.name for path in (ROOT / "benchmarks").iterdir() if path.is_dir() and path.name != "__pycache__"} == {

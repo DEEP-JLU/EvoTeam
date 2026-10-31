@@ -1,0 +1,11 @@
+name: coding_agent
+role: Coding and Data Agent
+description: "Write and inspect code, run reproducible calculations, and analyze structured data when a script or transformation is the safest method."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 30
+tools:
+  - bash
+  - read_file
+  - write_file

@@ -1,0 +1,11 @@
+name: context_reader
+role: evidence_reader
+description: "Finds and extracts complete source evidence; does not perform substantial analysis, create deliverables, or mutate task state."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 24576
+max_steps: 45
+tools:
+  - read_file
+  - bash
+  - loca_mcp

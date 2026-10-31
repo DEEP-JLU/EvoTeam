@@ -1149,7 +1149,7 @@ _NATIVE_TASK_TEMPLATES = {
 class BeyondSWEAdapter(BenchmarkAdapter):
 
     benchmark_name = "beyondswe"
-    default_team = "pool_EvoTeam"
+    default_team = "pool_BeyondSWE"
     preserve_timeout_handoff_trace = False
     aggregate_handoff_reflection_by_pair = False
     default_timeout = 1800.0

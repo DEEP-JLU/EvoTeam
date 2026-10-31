@@ -168,7 +168,7 @@ class GAIAAdapter(BenchmarkAdapter):
         return policy.bind(workspace_paths=paths)
 
     benchmark_name = "gaia"
-    default_team = "pool_EvoTeam"
+    default_team = "pool_GAIA_pool"
     preserve_timeout_handoff_trace = False
     aggregate_handoff_reflection_by_pair = False
     default_timeout = 900.0

@@ -1,0 +1,10 @@
+name: reading_agent
+role: Evidence and Archive Agent
+description: "Read documents, locate historical or archived evidence, and extract exact supporting facts."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 25
+tools:
+  - bash
+  - read_file

@@ -1,0 +1,7 @@
+name: answer_agent
+description: "Synthesize a concise BeyondSWE fix summary after patch and test verification."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 4096
+max_steps: 15
+tools: []

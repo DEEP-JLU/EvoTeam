@@ -1,0 +1,9 @@
+name: dependency_architect
+description: "Cross-file dependency specialist - traces interfaces, imports, call paths, shared models, and the propagation of repository-wide changes."
+model: gpt-5.6-luna
+temperature: 0.2
+max_tokens: 32768
+max_steps: 45
+tools:
+  - read_file
+  - bash

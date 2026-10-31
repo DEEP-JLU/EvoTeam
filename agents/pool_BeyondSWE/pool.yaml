@@ -1,0 +1,14 @@
+chairman: planner
+settings:
+  max_seconds: 1800
+  max_messages: 600
+  # L1/L2 reflection has a separate per-phase cap.  The Anthropic proxy can
+  # spend several minutes recovering from 502/524 failures, so keep enough
+  # room for agents to explicitly finish reflection rather than auto-complete.
+  reflection_phase_timeout: 600
+  team_selection_enabled: true
+  teammate_profiles_enabled: false
+  answer_agent: answer_agent
+  answer_agent_required: true
+  answer_protocol: beyondswe_patch_summary
+api_recovery_budget: 600.0

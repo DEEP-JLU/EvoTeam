@@ -1,0 +1,11 @@
+name: planner
+role: chairman
+description: "Coordinates the complete LOCA task, selects a family by real collaboration needs, and recruits the smallest useful subset of members."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 80
+tools:
+  - read_file
+  - bash
+  - loca_mcp

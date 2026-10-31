@@ -1,0 +1,12 @@
+name: science_agent
+role: Quantitative and Science Agent
+description: "Solve quantitative, physics, chemistry, astronomy, and scientific reasoning tasks with unit, formula, and magnitude checks."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 30
+tools:
+  - bash
+  - read_file
+  - web_search
+  - web_fetch

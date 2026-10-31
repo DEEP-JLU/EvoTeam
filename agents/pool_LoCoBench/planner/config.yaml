@@ -1,0 +1,9 @@
+name: planner
+description: "Long-context code coordinator - selects readers and task specialists, then directs the developer to write the solution."
+model: gpt-5.6-luna
+temperature: 0.2
+max_tokens: 32768
+max_steps: 50
+tools:
+  - read_file
+  - bash

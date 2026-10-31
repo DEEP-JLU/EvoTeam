@@ -348,7 +348,7 @@ def _evaluate_with_metrics(scenario: dict, solution_code: dict[str, str]) -> dic
 
 class LoCoBenchAdapter(BenchmarkAdapter):
     benchmark_name = "locobench"
-    default_team = "pool_EvoTeam"
+    default_team = "pool_LoCoBench"
     preserve_timeout_handoff_trace = False
     aggregate_handoff_reflection_by_pair = False
     default_timeout = 1800.0

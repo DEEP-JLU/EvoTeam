@@ -1,0 +1,8 @@
+name: answer_agent
+role: global_service
+description: "Global final-output service; summarizes verified LOCA results and is never part of a family template."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 4096
+max_steps: 15
+tools: []

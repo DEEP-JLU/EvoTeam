@@ -1,0 +1,11 @@
+name: web_agent
+description: "Search the web to find necessary information."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 30
+tools:
+  - web_search
+  - web_fetch
+  - bash
+  - read_file

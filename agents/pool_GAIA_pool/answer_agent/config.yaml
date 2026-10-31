@@ -1,0 +1,9 @@
+name: answer_agent
+description: "Generate the final answer based on gathered information."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 10
+tools:
+  - bash
+  - read_file

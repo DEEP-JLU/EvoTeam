@@ -23,14 +23,16 @@ LOCA_SPLITS = ("8k", "16k", "32k", "64k", "128k", "256k")
 LOCA_SEEDS = (42, 123, 456, 789, 2024)
 
 
-def _load_adapters(reference_root: Path):
-    sys.path.insert(0, str(reference_root.resolve()))
+def _load_adapters():
+    repository_root = str(ROOT.resolve())
+    if repository_root not in sys.path:
+        sys.path.insert(0, repository_root)
     adapters = {}
     for name, module_name, class_name in (
-        ("gaia", "benchmarks.adapter_gaia", "GAIAAdapter"),
-        ("locobench", "benchmarks.adapter_locobench", "LoCoBenchAdapter"),
-        ("locabench", "benchmarks.adapter_locabench", "LOCABenchAdapter"),
-        ("beyondswe", "benchmarks.adapter_beyondswe", "BeyondSWEAdapter"),
+        ("gaia", "benchmarks.mixed_native.gaia_backend", "GAIAAdapter"),
+        ("locobench", "benchmarks.mixed_native.locobench_backend", "LoCoBenchAdapter"),
+        ("locabench", "benchmarks.mixed_native.locabench_backend", "LOCABenchAdapter"),
+        ("beyondswe", "benchmarks.mixed_native.beyondswe_backend", "BeyondSWEAdapter"),
     ):
         adapters[name] = getattr(importlib.import_module(module_name), class_name)()
     return adapters
@@ -75,13 +77,13 @@ def _order_hash(rows: list[dict]) -> str:
     return hashlib.sha256(material.encode("utf-8")).hexdigest()
 
 
-def build(reference_root: Path, seed: int) -> dict:
+def build(seed: int) -> dict:
     payload = json.loads(BASE_MANIFEST.read_text(encoding="utf-8"))
     evolve = [copy.deepcopy(row) for row in payload["tasks"] if row["phase"] == "evolve"]
     templates = {}
     for row in evolve:
         templates.setdefault(row["source"]["benchmark"], row)
-    adapters = _load_adapters(reference_root)
+    adapters = _load_adapters()
     tests: list[dict] = []
 
     def add_range(benchmark: str, split: str, args: dict, indices):
@@ -127,16 +129,10 @@ def build(reference_root: Path, seed: int) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--reference-root",
-        type=Path,
-        required=True,
-        help="Path to a checkout that provides the native benchmark adapters and data.",
-    )
     parser.add_argument("--seed", type=int, default=20260828)
     parser.add_argument("--output", type=Path, default=SUITE_DIR / "manifests" / "mixed_benchmark_official_116_plus_838_test_seed20260828.json")
     args = parser.parse_args()
-    result = build(args.reference_root, args.seed)
+    result = build(args.seed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(args.output)

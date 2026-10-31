@@ -1,0 +1,12 @@
+chairman: planner
+settings:
+  max_seconds: 1200
+  max_messages: 400
+  team_selection_enabled: true
+  teammate_profiles_enabled: true
+  chairman_teammate_profiles_enabled: true
+  member_teammate_profiles_enabled: false
+  answer_agent: answer_agent
+  answer_agent_required: true
+  answer_protocol: locobench_solution_summary
+api_recovery_budget: 600.0

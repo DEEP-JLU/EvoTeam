@@ -1,0 +1,7 @@
+name: plan_agent
+description: "Analyse the given question and evaluate necessary information."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 40
+tools: []

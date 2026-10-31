@@ -1,0 +1,13 @@
+name: developer
+description: "BeyondSWE bug fix expert — explores codebases, locates bugs, and implements minimal fixes using structured editing tools."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 32768
+max_steps: 150
+tools:
+  - docker_bash
+  - docker_str_replace_editor
+  - read_file
+skills:
+  - codebase-navigation
+  - systematic-debugging

@@ -1,0 +1,11 @@
+name: artifact_specialist
+role: artifact_handler
+description: "Creates or modifies required local files and structured deliverables from an established result set; does not mutate external services."
+model: claude-sonnet-4.6
+temperature: 0.2
+max_tokens: 24576
+max_steps: 50
+tools:
+  - read_file
+  - bash
+  - loca_mcp
