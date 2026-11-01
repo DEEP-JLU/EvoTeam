@@ -116,14 +116,21 @@ limits, and native evaluator. For example:
 
 ```bash
 python3 -m benchmarks.mixed_native.gaia_backend \
-  --split train_20 --evolve --run-id <gaia_evolution_run_id>
+  --split train_20 --evolve --run-id gaia_evolution_evolve
+
+scripts/freeze_team.sh gaia_evolution_evolve latest pool_GAIA_frozen
 
 python3 -m benchmarks.mixed_native.gaia_backend \
-  --split test_100 --run-id <gaia_test_run_id> --rollout 3
+  --split test_100 --team pool_GAIA_frozen \
+  --run-id gaia_test --rollout 3
 ```
 
-Use the corresponding adapter module for LoCoBench, LOCA-Bench, or BeyondSWE
-and inspect its `--help` output for valid benchmark-specific splits.
+The freeze step copies the final evolved version from `runs/` into an
+independent team directory under `agents/`; `--team pool_GAIA_frozen` then
+ensures that evaluation uses the evolved team rather than the initial pool.
+Use the corresponding adapter module and frozen team name for LoCoBench,
+LOCA-Bench, or BeyondSWE, and inspect each adapter's `--help` output for valid
+benchmark-specific splits.
 The adapters default to the corresponding initial pools:
 `pool_GAIA_pool`, `pool_LoCoBench`, `pool_LOCAbench`, and `pool_BeyondSWE`.
 
