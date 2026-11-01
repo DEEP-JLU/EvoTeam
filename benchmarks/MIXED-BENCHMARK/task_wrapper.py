@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from core.output_contract import output_contract_from_name
+from benchmarks.metric_utils import metric_key, track_for_source
 from mixed_benchmark_manifest import MixedBenchmarkManifest, MixedTask
 from mixed_adapter import ADAPTER_REGISTRY, MixedBenchmarkAdapter
 
@@ -163,6 +164,17 @@ class MixedTaskWrapper:
             "order": task.order,
             "source_benchmark": task.source.benchmark,
             "source_split": task.source.split,
+            "source_adapter_args": dict(task.source.adapter_args),
+            "source_track": track_for_source(
+                task.source.benchmark,
+                task.source.split,
+                adapter_args=task.source.adapter_args,
+            ),
+            "metric_key": metric_key(
+                task.source.benchmark,
+                task.source.split,
+                adapter_args=task.source.adapter_args,
+            ),
             "source_task_id": task.source.task_id,
             "native_source_index": task.source.source_index,
             "task_id": task.mixed_task_id,
@@ -245,6 +257,17 @@ class MixedTaskWrapper:
             "order": spec.order,
             "source_benchmark": spec.source.benchmark,
             "source_split": spec.source.split,
+            "source_adapter_args": dict(spec.source.adapter_args),
+            "source_track": track_for_source(
+                spec.source.benchmark,
+                spec.source.split,
+                adapter_args=spec.source.adapter_args,
+            ),
+            "metric_key": metric_key(
+                spec.source.benchmark,
+                spec.source.split,
+                adapter_args=spec.source.adapter_args,
+            ),
             "source_task_id": spec.source.task_id,
             "native_score": float(eval_result.score),
             "is_correct": bool(eval_result.success),

@@ -164,6 +164,14 @@ python3 benchmarks/MIXED-BENCHMARK/mixed_scheduler.py \
 python3 scripts/aggregate_avg3.py \
   <test_run_id>_r1 <test_run_id>_r2 <test_run_id>_r3
 ```
+
+Evaluation summaries report the six benchmark tracks separately. LoCoBench FI
+and CR use continuous LCBS (0–5) as their primary score: `primary_score` in
+scheduler summaries and `avg_at_k_primary_score` in the aggregation script.
+Native-score fields retain the adapter's normalized score; success rates are
+auxiliary statistics. Avg@3 includes a task only when all three rollouts have
+eligible results and reports coverage for incomplete runs.
+
 ## Project Structure
 
 ```text

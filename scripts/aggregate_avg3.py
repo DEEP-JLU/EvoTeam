@@ -4,10 +4,24 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from benchmarks.metric_utils import (
+    display_name,
+    is_lcbs_metric,
+    lcbs_score,
+    metric_key,
+    metric_key_from_row,
+    primary_metric,
+    primary_score,
+)
+
 DEFAULT_MANIFEST = ROOT / "benchmarks/MIXED-BENCHMARK/manifests/mixed_benchmark_official_116_plus_838_test_seed20260828.json"
 
 
@@ -28,7 +42,14 @@ def aggregate_records(run_ids: list[str], rows_by_run: list[list[dict]], expecte
     if len(run_ids) != len(rows_by_run):
         raise ValueError("run_ids and rows_by_run must have matching lengths")
     expected = {
-        (str(row["source"]["benchmark"]), str(row["mixed_task_id"]))
+        (
+            metric_key(
+                row["source"]["benchmark"],
+                row["source"].get("split"),
+                adapter_args=row["source"].get("adapter_args") or {},
+            ),
+            str(row["mixed_task_id"]),
+        )
         for row in expected_tasks
         if row.get("phase") == "test" and row.get("enabled", True)
     }
@@ -39,7 +60,7 @@ def aggregate_records(run_ids: list[str], rows_by_run: list[list[dict]], expecte
         for row in rows:
             if row.get("phase") != "test" or not row.get("mixed_task_id"):
                 continue
-            key = (str(row.get("source_benchmark", "")), str(row["mixed_task_id"]))
+            key = (metric_key_from_row(row), str(row["mixed_task_id"]))
             if key in indexed:
                 raise ValueError(f"duplicate result for {key} in run {run_id}")
             indexed[key] = row
@@ -47,47 +68,59 @@ def aggregate_records(run_ids: list[str], rows_by_run: list[list[dict]], expecte
 
     task_scores: dict[str, list[dict]] = defaultdict(list)
     task_ids: dict[str, set[str]] = defaultdict(set)
-    for benchmark, task_id in expected:
-        task_ids[benchmark].add(task_id)
+    for metric, task_id in expected:
+        task_ids[metric].add(task_id)
         valid = []
         for run_id in run_ids:
-            row = raw_rows[run_id].get((benchmark, task_id))
+            row = raw_rows[run_id].get((metric, task_id))
             if row is None:
                 continue
             if row.get("infrastructure_failure"):
-                infra_counts[benchmark] += 1
+                infra_counts[metric] += 1
                 continue
             if row.get("official_score_eligible", True):
                 valid.append(row)
         if len(valid) == len(run_ids):
-            task_scores[benchmark].append({
+            task_scores[metric].append({
                 "avg_score": sum(float(row.get("native_score", 0.0)) for row in valid) / len(valid),
                 "avg_correct": sum(bool(row.get("is_correct")) for row in valid) / len(valid),
+                "avg_primary_score": sum(primary_score(metric, row) for row in valid) / len(valid),
+                "avg_lcbs": (
+                    sum(float(lcbs_score(row) or 0.0) for row in valid) / len(valid)
+                    if is_lcbs_metric(metric) else None
+                ),
             })
 
     summary = {}
-    for benchmark, expected_ids in sorted(task_ids.items()):
-        complete = task_scores[benchmark]
+    for metric, expected_ids in sorted(task_ids.items()):
+        complete = task_scores[metric]
         per_run_valid = []
         for run_id in run_ids:
             per_run_valid.append(sum(
                 1 for task_id in expected_ids
-                if (row := raw_rows[run_id].get((benchmark, task_id))) is not None
+                if (row := raw_rows[run_id].get((metric, task_id))) is not None
                 and not row.get("infrastructure_failure")
                 and row.get("official_score_eligible", True)
             ))
         denominator = len(expected_ids) * len(run_ids)
-        summary[benchmark] = {
+        summary[metric] = {
+            "display_name": display_name(metric),
+            "primary_metric": primary_metric(metric),
             "expected_tasks": len(expected_ids),
             "complete_avg_at_tasks": len(complete),
             "incomplete_tasks": len(expected_ids) - len(complete),
-            "infrastructure_failures": infra_counts[benchmark],
+            "infrastructure_failures": infra_counts[metric],
             "per_rollout_eligible_tasks": per_run_valid,
             "rollout_coverage": round(sum(per_run_valid) / denominator, 4) if denominator else 0.0,
             "avg_at_k_native_score": round(sum(row["avg_score"] for row in complete) / len(complete), 4) if complete else None,
+            "avg_at_k_primary_score": round(sum(row["avg_primary_score"] for row in complete) / len(complete), 4) if complete else None,
+            "avg_at_k_lcbs": (
+                round(sum(row["avg_lcbs"] for row in complete if row["avg_lcbs"] is not None) / len(complete), 4)
+                if is_lcbs_metric(metric) and complete else None
+            ),
             "avg_at_k_success_rate": round(sum(row["avg_correct"] for row in complete) / len(complete), 4) if complete else None,
         }
-        summary[benchmark]["expected_task_ids"] = sorted(expected_ids)
+        summary[metric]["expected_task_ids"] = sorted(expected_ids)
     return {
         "avg_at": len(run_ids),
         "run_ids": run_ids,

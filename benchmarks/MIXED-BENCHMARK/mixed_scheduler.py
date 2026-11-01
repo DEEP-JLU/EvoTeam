@@ -18,6 +18,15 @@ for path in (str(THIS_DIR), str(PROJECT_ROOT)):
 
 from core.result_manifest import ResultManifest
 from core.run_manager import RunManager
+from benchmarks.metric_utils import (
+    display_name,
+    is_lcbs_metric,
+    lcbs_score,
+    metric_key,
+    metric_key_from_row,
+    primary_metric,
+    primary_score,
+)
 from benchmarks.mixed_native.data_paths import mixed_data_root
 from mixed_benchmark_manifest import MixedBenchmarkManifest, MixedTask
 from task_wrapper import MixedTaskWrapper
@@ -281,21 +290,33 @@ class MixedScheduler:
         expected_test_task_ids: dict[str, list[str]] = defaultdict(list)
         for task in self.manifest.tasks_for_phase("test", enabled_only=False):
             if task.enabled:
-                expected_test_tasks[task.source.benchmark] += 1
-                expected_test_task_ids[task.source.benchmark].append(task.mixed_task_id)
+                metric = metric_key(
+                    task.source.benchmark,
+                    task.source.split,
+                    adapter_args=task.source.adapter_args,
+                )
+                expected_test_tasks[metric] += 1
+                expected_test_task_ids[metric].append(task.mixed_task_id)
         by_benchmark: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for row in rows:
-            by_benchmark[str(row["source_benchmark"])].append(row)
+            if row.get("phase") != "test":
+                continue
+            by_benchmark[metric_key_from_row(row)].append(row)
         benchmark_summary = {}
-        for benchmark, benchmark_rows in sorted(by_benchmark.items()):
+        for metric in sorted(set(expected_test_tasks) | set(by_benchmark)):
+            benchmark_rows = by_benchmark[metric]
             eligible = [
                 row for row in benchmark_rows
                 if not row.get("infrastructure_failure")
                 and row.get("official_score_eligible", True)
             ]
-            benchmark_summary[benchmark] = {
+            primary_values = [primary_score(metric, row) for row in eligible]
+            lcbs_values = [lcbs_score(row) for row in eligible]
+            benchmark_summary[metric] = {
+                "display_name": display_name(metric),
+                "primary_metric": primary_metric(metric),
                 "assigned": len(benchmark_rows),
-                "expected_test_tasks": expected_test_tasks.get(benchmark, 0),
+                "expected_test_tasks": expected_test_tasks.get(metric, 0),
                 "eligible": len(eligible),
                 "infrastructure_failures": sum(
                     bool(row.get("infrastructure_failure"))
@@ -308,6 +329,11 @@ class MixedScheduler:
                 "native_avg_score": round(
                     sum(row.get("native_score", 0.0) for row in eligible) / len(eligible), 4
                 ) if eligible else None,
+                "primary_score": round(sum(primary_values) / len(primary_values), 4) if primary_values else None,
+                "avg_lcbs": (
+                    round(sum(value for value in lcbs_values if value is not None) / len(eligible), 4)
+                    if is_lcbs_metric(metric) and eligible else None
+                ),
                 "native_score_sum": round(
                     sum(row.get("native_score", 0.0) for row in eligible), 6
                 ),
@@ -333,6 +359,13 @@ class MixedScheduler:
                 {
                     "mixed_task_id": row["mixed_task_id"],
                     "source_benchmark": row["source_benchmark"],
+                    "source_split": row.get("source_split", ""),
+                    "source_track": row.get("source_track", ""),
+                    "metric_key": metric_key_from_row(row),
+                    "lcbs": (
+                        lcbs_score(row)
+                        if is_lcbs_metric(metric_key_from_row(row)) else None
+                    ),
                     "native_score": float(row.get("native_score", 0.0) or 0.0),
                     "is_correct": bool(row.get("is_correct", False)),
                     "infrastructure_failure": bool(row.get("infrastructure_failure", False)),
@@ -374,56 +407,64 @@ def aggregate_rollout_summaries(summaries: list[dict[str, Any]]) -> dict[str, An
             expected_ids[benchmark] = ids
         indexed = {}
         for row in summary.get("test_task_results", []):
-            key = (str(row.get("source_benchmark", "")), str(row.get("mixed_task_id", "")))
+            key = (metric_key_from_row(row), str(row.get("mixed_task_id", "")))
             if key in indexed:
                 raise ValueError(f"duplicate test result for {key} in run {summary.get('run_id')}")
             indexed[key] = row
         task_results.append(indexed)
-    for benchmark, ids in expected_ids.items():
-        if benchmark in expected and expected[benchmark] != len(ids):
+    for metric, ids in expected_ids.items():
+        if metric in expected and expected[metric] != len(ids):
             raise ValueError(
-                f"expected task count and task IDs disagree for {benchmark}: "
-                f"{expected[benchmark]} vs {len(ids)}"
+                f"expected task count and task IDs disagree for {metric}: "
+                f"{expected[metric]} vs {len(ids)}"
             )
-        expected[benchmark] = len(ids)
+        expected[metric] = len(ids)
     benchmark_summary: dict[str, Any] = {}
     rates: list[float] = []
-    for benchmark, expected_count in sorted(expected.items()):
+    for metric, expected_count in sorted(expected.items()):
         candidates: dict[str, list[dict[str, Any]]] = defaultdict(list)
         infra_count = 0
         valid_per_rollout = []
         per_rollout_score = []
+        per_rollout_primary_score = []
         per_rollout_success = []
-        expected_for_benchmark = expected_ids.get(benchmark)
+        expected_for_benchmark = expected_ids.get(metric)
         for indexed in task_results:
             count = 0
-            rollout_scores = []
+            rollout_native_scores = []
+            rollout_primary_scores = []
             rollout_correct = []
             candidate_ids = expected_for_benchmark
             if candidate_ids is None:
                 candidate_ids = {
-                    task_id for source_benchmark, task_id in indexed
-                    if source_benchmark == benchmark
+                    task_id for source_metric, task_id in indexed
+                    if source_metric == metric
                 }
             for task_id in candidate_ids:
-                row = indexed.get((benchmark, task_id))
+                row = indexed.get((metric, task_id))
                 if row is None:
                     continue
                 if row.get("infrastructure_failure"):
                     infra_count += 1
                 elif row.get("official_score_eligible", True):
                     candidates[task_id].append(row)
-                    rollout_scores.append(float(row.get("native_score", 0.0)))
+                    rollout_native_scores.append(float(row.get("native_score", 0.0)))
+                    rollout_primary_scores.append(primary_score(metric, row))
                     rollout_correct.append(bool(row.get("is_correct")))
                     count += 1
             valid_per_rollout.append(count)
             per_rollout_score.append(
-                sum(rollout_scores) / len(rollout_scores) if rollout_scores else None
+                sum(rollout_native_scores) / len(rollout_native_scores)
+                if rollout_native_scores else None
+            )
+            per_rollout_primary_score.append(
+                sum(rollout_primary_scores) / len(rollout_primary_scores)
+                if rollout_primary_scores else None
             )
             per_rollout_success.append(
                 sum(rollout_correct) / len(rollout_correct) if rollout_correct else None
             )
-        expected_for_benchmark = expected_ids.get(benchmark)
+        expected_for_benchmark = expected_ids.get(metric)
         task_ids = expected_for_benchmark if expected_for_benchmark is not None else set(candidates)
         complete = [
             candidates[task_id]
@@ -431,16 +472,26 @@ def aggregate_rollout_summaries(summaries: list[dict[str, Any]]) -> dict[str, An
             if len(candidates.get(task_id, [])) == len(summaries)
         ]
         task_avg_scores = [
+            sum(primary_score(metric, row) for row in rows) / len(rows)
+            for rows in complete
+        ]
+        task_avg_native_scores = [
             sum(float(row.get("native_score", 0.0)) for row in rows) / len(rows)
             for rows in complete
         ]
+        task_avg_lcbs = [
+            sum(float(lcbs_score(row) or 0.0) for row in rows) / len(rows)
+            for rows in complete
+        ] if is_lcbs_metric(metric) else []
         task_avg_correct = [
             sum(bool(row.get("is_correct")) for row in rows) / len(rows)
             for rows in complete
         ]
         coverage_denominator = expected_count * len(summaries)
         eligible = sum(valid_per_rollout)
-        benchmark_summary[benchmark] = {
+        benchmark_summary[metric] = {
+            "display_name": display_name(metric),
+            "primary_metric": primary_metric(metric),
             "expected_tasks_per_rollout": expected_count,
             "expected_task_ids": sorted(task_ids),
             "complete_avg_at_tasks": len(complete),
@@ -448,10 +499,13 @@ def aggregate_rollout_summaries(summaries: list[dict[str, Any]]) -> dict[str, An
             "infrastructure_failures": infra_count,
             "per_rollout_eligible_tasks": valid_per_rollout,
             "per_rollout_native_scores": per_rollout_score,
+            "per_rollout_primary_scores": per_rollout_primary_score,
             "per_rollout_success_rates": per_rollout_success,
             "eligible": eligible,
             "rollout_coverage": round(eligible / coverage_denominator, 4) if coverage_denominator else 0.0,
-            "native_avg_score": round(sum(task_avg_scores) / len(task_avg_scores), 4) if task_avg_scores else None,
+            "native_avg_score": round(sum(task_avg_native_scores) / len(task_avg_native_scores), 4) if task_avg_native_scores else None,
+            "primary_score": round(sum(task_avg_scores) / len(task_avg_scores), 4) if task_avg_scores else None,
+            "avg_lcbs": round(sum(task_avg_lcbs) / len(task_avg_lcbs), 4) if task_avg_lcbs else None,
             "success_rate": round(sum(task_avg_correct) / len(task_avg_correct), 4) if task_avg_correct else None,
         }
         if task_avg_correct:
