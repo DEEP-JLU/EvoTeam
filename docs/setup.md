@@ -1,152 +1,112 @@
 # Setup Guide
 
-This guide covers the external tool package required by the EvoTeam runtime, its module responsibilities and compatibility notes, and setup checks for benchmark-specific dependencies.
+This guide covers external services and benchmark environments used by
+EvoTeam. Framework coordination and post-task evolution are runtime features;
+they do not require a separate user-installed package or compatibility
+protocol.
 
-## Tool Package
+## Model endpoint
 
-EvoTeam requires a compatible Python package named `tools`. This package
-provides execution tools, agent communication, orchestration primitives, and
-reflection operations. Installing the Python dependencies alone does not
-install this package.
+Configure the model endpoint in `.env` (or in the file selected by
+`EVOTEAM_ENV_FILE`):
 
-### Prepare the tool package
-
-Place the tool implementation directory at the repository root:
-
-```text
-EvoTeam/
-├── tools/
-│   ├── __init__.py
-│   ├── bash.py
-│   ├── read_file.py
-│   ├── write_file.py
-│   ├── web_search.py
-│   ├── web_fetch.py
-│   ├── docker_bash.py
-│   ├── docker_str_replace_editor.py
-│   ├── loca_mcp.py
-│   ├── messaging.py
-│   ├── primitives.py
-│   └── reflection.py
-├── core/
-├── benchmarks/
-└── runtime_pool.py
+```dotenv
+LLM_PROVIDER=dev
+DEV_API_BASE=https://your-openai-compatible-endpoint/v1
+DEV_API_KEY=your-api-key
+EVOTEAM_MODEL=gpt-5.6-luna
 ```
 
-From the repository root, copy an existing compatible tool package:
+Install the Python dependencies from the repository root:
 
 ```bash
-cp -R "/path/to/compatible/tools" ./tools
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install -e .
 ```
 
-Alternatively, link to an existing directory:
+## Web search and webpage access
 
-```bash
-ln -s "/path/to/compatible/tools" ./tools
-```
+GAIA tasks that require web evidence use the configured web-search provider and
+webpage retrieval. The provider is selected in this order:
 
-Use either command when `./tools` does not already exist. The runtime loads
-execution tools from this directory. Setting `MIXED_DATA_ROOT` does not
-replace this requirement.
-
-### Tool groups
-
-| Group | Modules | Purpose |
-|---|---|---|
-| Local execution | `bash`, `read_file`, `write_file` | Execute commands and access task workspace files. |
-| Web access | `web_search`, `web_fetch` | Search the web and retrieve webpage text. |
-| Container execution | `docker_bash`, `docker_str_replace_editor` | Run commands and edit files inside BeyondSWE containers. |
-| LOCA environment | `loca_mcp` | Access the MCP tools initialized for each LOCA-Bench task. |
-| Agent communication | `messaging` | Exchange messages, wait for replies, and inspect agent status. |
-| Orchestration | `primitives` | Provide agent lifecycle and task submission operations. |
-| Reflection | `reflection` | Provide prompt patch, skill, and teammate profile update operations. |
-
-Teammate Profile Reflection maintains the Chairman's recruitment memory.
-It is separate from team-template and handoff-rule evolution. The external
-tool package's legacy `skip_l2_reflection` tool and internal `l2_reflection`
-protocol remain for compatibility; these names refer to profile maintenance.
-
-The benchmark-specific execution tools are:
-
-| Benchmark | Execution tools |
-|---|---|
-| GAIA | `read_file`, `write_file`, `bash`, `web_search`, `web_fetch` |
-| LoCoBench | `read_file`, `write_file`, `bash` |
-| LOCA-Bench | `read_file`, `write_file`, `bash`, `loca_mcp` |
-| BeyondSWE | `read_file`, `docker_bash`, `docker_str_replace_editor` |
-
-Communication, orchestration, and reflection modules support the shared
-runtime across benchmarks. Individual benchmarks may require additional
-dependencies from their own installation instructions.
-
-### Configure web search
-
-The compatible web search implementation selects a provider in this order:
-
-1. Serper when `SERPER_KEY_ID` is configured.
-2. SerpAPI when `SERPAPI_API_KEY` is configured.
+1. Serper when `SERPER_KEY_ID` is configured;
+2. SerpAPI when `SERPAPI_API_KEY` is configured;
 3. DuckDuckGo when neither key is configured.
 
-To use Serper, add the following to `.env`:
+To use Serper, add this to `.env`:
 
 ```dotenv
 SERPER_KEY_ID=your-serper-api-key
 ```
 
-Alternatively, use SerpAPI:
+Alternatively, configure SerpAPI:
 
 ```dotenv
 SERPAPI_API_KEY=your-serpapi-api-key
 ```
 
-DuckDuckGo does not require an API key. Web search and webpage retrieval
-require network access.
+DuckDuckGo requires no API key. Web search and webpage retrieval require
+network access.
 
-### Additional runtime requirements
+## Docker and BeyondSWE
 
-BeyondSWE requires a running Docker daemon and access to the container images
-used by its tasks. Check Docker availability with:
+BeyondSWE tasks execute in the benchmark-provided Docker environments. Install
+Docker, make sure the daemon is running, and verify it from the shell:
 
 ```bash
 docker info
 ```
 
-For LOCA-Bench, install the dependencies required by the task-configured MCP
-servers. The adapter initializes the environment and MCP tools for each task;
-`loca_mcp` becomes available through that initialization.
+The required BeyondSWE images and task data must be available under the
+external benchmark directory before running the corresponding track.
 
-### Verify tool loading
+## LOCA-Bench MCP environment
 
-Run this check from the repository root:
+LOCA-Bench initializes the MCP servers declared by each task. Install the
+dependencies required by the task-configured MCP servers and make those
+servers available in the LOCA-Bench environment. EvoTeam initializes and
+cleans up the task MCP session automatically.
+
+## External data layout
+
+Keep large datasets and benchmark checkouts outside the repository when
+desired. Set the external root and, for BeyondSWE, the JSONL file explicitly:
 
 ```bash
-python3 -B - <<'PY'
-import importlib
-from pathlib import Path
-from core.tool_registry import ToolRegistry
-
-required = {
-    "bash",
-    "read_file",
-    "write_file",
-    "web_search",
-    "web_fetch",
-    "docker_bash",
-    "docker_str_replace_editor",
-    "loca_mcp",
-}
-
-registry = ToolRegistry(str(Path("tools").resolve()))
-missing = required - set(registry.all_names())
-if missing:
-    raise SystemExit(f"Missing execution tools: {sorted(missing)}")
-
-for name in ("messaging", "primitives", "reflection"):
-    importlib.import_module(f"tools.{name}")
-
-print("Tool package loaded successfully.")
-PY
+export MIXED_DATA_ROOT="/absolute/path/to/external-assets"
+export BEYONDSWE_DATA_FILE="/absolute/path/to/beyondswe.jsonl"
 ```
 
-This check verifies module imports and execution tool registration. Benchmark
-data, API access, Docker images, and MCP services must be configured separately.
+The external root must preserve the following repository-relative layout:
+
+```text
+<MIXED_DATA_ROOT>/
+├── data/
+│   └── gaia/
+└── benchmarks/
+    ├── LoCoBench/
+    ├── LOCA-bench/
+    └── BeyondSWE/
+```
+
+GAIA requires its split files and attachments under `data/gaia/`. LoCoBench
+and LOCA-Bench use their benchmark installations under `benchmarks/`; BeyondSWE
+uses the configured JSONL file or one of the supported files under
+`benchmarks/BeyondSWE/`.
+
+## Quick checks
+
+Run these checks before a benchmark experiment:
+
+```bash
+python3 -m benchmarks.mixed_native.gaia_backend --help
+python3 -m benchmarks.mixed_native.locobench_backend --help
+python3 -m benchmarks.mixed_native.locabench_backend --help
+python3 -m benchmarks.mixed_native.beyondswe_backend --help
+docker info  # required for BeyondSWE
+```
+
+The adapters report any missing benchmark data or environment service when a
+run starts.

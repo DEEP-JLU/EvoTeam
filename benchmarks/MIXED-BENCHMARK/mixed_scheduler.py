@@ -38,7 +38,7 @@ class MixedScheduler:
         self.phase = phase
         self.wrapper = MixedTaskWrapper(manifest)
         data_root = mixed_data_root(PROJECT_ROOT)
-        required_paths = {"tool implementations": data_root / "tools"}
+        required_paths = {}
         if "gaia" in manifest.active_benchmarks:
             required_paths["GAIA data"] = data_root / "data" / "gaia"
         if "locobench" in manifest.active_benchmarks:
