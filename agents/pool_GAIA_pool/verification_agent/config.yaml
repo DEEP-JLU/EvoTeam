@@ -1,7 +1,7 @@
 name: verification_agent
 role: Verification Agent
 description: "Independently check calculations, sources, files, and strict answer formatting; run focused validation and flag concrete risks."
-model: claude-sonnet-4.6
+model: gpt-5.6-luna
 temperature: 0.2
 max_tokens: 32768
 max_steps: 25

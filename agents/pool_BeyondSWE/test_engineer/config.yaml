@@ -1,6 +1,6 @@
 name: test_engineer
 description: "Regression-test specialist — reproduces failures, selects focused tests, and interprets test evidence for software fixes."
-model: claude-sonnet-4.6
+model: gpt-5.6-luna
 temperature: 0.2
 max_tokens: 32768
 max_steps: 75

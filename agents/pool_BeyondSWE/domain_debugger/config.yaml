@@ -1,6 +1,6 @@
 name: domain_debugger
 description: "Domain debugging specialist — analyzes protocol, numerical, data-format, and cross-system failures that need focused technical reasoning."
-model: claude-sonnet-4.6
+model: gpt-5.6-luna
 temperature: 0.2
 max_tokens: 32768
 max_steps: 90

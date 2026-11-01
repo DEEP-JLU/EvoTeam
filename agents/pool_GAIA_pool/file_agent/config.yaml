@@ -1,6 +1,6 @@
 name: file_agent
 description: "Analyse the input file to extract useful information."
-model: claude-sonnet-4.6
+model: gpt-5.6-luna
 temperature: 0.2
 max_tokens: 32768
 max_steps: 25
