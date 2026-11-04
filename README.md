@@ -197,8 +197,13 @@ EvoTeam/
 
 If you use this code, please cite the accompanying EvoTeam paper:
 
-```text
-EvoTeam: Multi-Agent Collaboration via Evolving Teams.
+```
+@article{cao2026evoteam,
+  title={EvoTeam: Multi-Agent Collaboration via Evolving Teams},
+  author={Cao, Qinuo and He, Xin and Fu, Dianxuan and Zhang, Lizhi and Xing, Zhaoqing and Wang, Jiapu and Wang, Xin and Zou, Na and Chang, Yi and Zhang, Qinggang},
+  journal={arXiv preprint arXiv:2610.39813},
+  year={2026}
+}
 ```
 
 ## Acknowledgements
